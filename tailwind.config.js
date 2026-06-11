@@ -17,7 +17,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui"],
-        mono: [""Roboto Mono"", "ui-monospace", "SFMono-Regular"],
+        mono: ["Roboto Mono", "ui-monospace", "SFMono-Regular"],
       },
       borderRadius: {
         xl: "1rem",

@@ -1,3 +1,4 @@
+"use client";
 // src/context/AuthProvider.tsx
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { auth } from "../lib/firebase";
@@ -70,3 +71,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthProvider;

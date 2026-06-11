@@ -1,8 +1,9 @@
+"use client";
 // src/app/auth/signup/page.tsx
 import { useState } from "react";
 import { useAuth } from "../../../context/AuthProvider";
 import Link from "next/link";
-import Header from "../../../components/Header";
+import Header from "../../components/Header";
 
 export default function SignUpPage() {
   const { signUp, loading, user } = useAuth();

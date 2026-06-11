@@ -1,8 +1,11 @@
+"use client";
 // src/app/components/Header.tsx
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthProvider";
 
 export default function Header() {
+  const { user, signOutUser } = useAuth();
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
   useEffect(() => {
