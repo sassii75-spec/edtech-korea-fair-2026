@@ -1,6 +1,6 @@
 // src/app/components/Header.tsx
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthProvider";
 
 export default function Header() {
   const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -34,6 +34,26 @@ export default function Header() {
               Dashboard
             </Link>
           </nav>
+        </div>
+        {/* Auth buttons */}
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <button
+              onClick={signOutUser}
+              className="bg-secondary text-surface px-3 py-1 rounded-md hover:bg-accent transition-colors"
+            >
+              로그아웃
+            </button>
+          ) : (
+            <>
+              <Link href="/auth/signin" className="bg-secondary text-surface px-3 py-1 rounded-md hover:bg-accent transition-colors">
+                로그인
+              </Link>
+              <Link href="/auth/signup" className="bg-primary text-surface px-3 py-1 rounded-md hover:bg-accent transition-colors">
+                회원가입
+              </Link>
+            </>
+          )}
         </div>
         <button
           onClick={toggleDark}
