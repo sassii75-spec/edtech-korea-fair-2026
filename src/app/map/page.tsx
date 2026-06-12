@@ -195,11 +195,11 @@ export default function MapPage() {
           </div>
 
           {/* Interactive Map Visual Element */}
-          <div className="flex-1 relative border border-white/5 rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center">
+          <div className="flex-1 relative border border-white/5 rounded-2xl overflow-auto bg-slate-950 flex items-center justify-center min-h-[400px]">
             
             <div 
               style={{ transform: `scale(${zoomLevel})` }}
-              className="absolute w-[95%] h-[95%] transition-transform duration-300 relative"
+              className="w-[95%] h-[95%] transition-transform duration-300 relative min-w-[500px] min-h-[400px]"
             >
               {/* Official 2025 Booth Layout Image from user's URL */}
               <img

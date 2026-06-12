@@ -3,18 +3,21 @@
 import { useState } from "react";
 import { useAuth } from "../../../context/AuthProvider";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
-  const { signIn, signInWithGoogle, loading, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, loading, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
       await signIn(email, password);
+      router.push("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -37,6 +40,40 @@ export default function SignInPage() {
     }
   };
 
+  // Pre-configured Quick Login for testing
+  const handleQuickLogin = async (type: "admin" | "user") => {
+    setError(null);
+    const testEmail = type === "admin" ? "admin@edtech.com" : "user@edtech.com";
+    const testPassword = "testpassword123";
+
+    try {
+      // 1. Try to sign in
+      await signIn(testEmail, testPassword);
+      // 2. Set default role
+      localStorage.setItem("userRole", type === "admin" ? "투자자" : "교사");
+      router.push("/dashboard");
+    } catch (err: any) {
+      // 3. Fallback: If account doesn't exist, create it on-the-fly
+      if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/invalid-credential" ||
+        err.message.includes("not-found") ||
+        err.message.includes("invalid-credential") ||
+        err.message.includes("INVALID_LOGIN_CREDENTIALS")
+      ) {
+        try {
+          await signUp(testEmail, testPassword);
+          localStorage.setItem("userRole", type === "admin" ? "투자자" : "교사");
+          router.push("/dashboard");
+        } catch (signupErr: any) {
+          setError(`자동 테스트 계정 가입 실패: ${signupErr.message}`);
+        }
+      } else {
+        setError(`테스트 계정 로그인 실패: ${err.message}`);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -53,10 +90,10 @@ export default function SignInPage() {
           <p className="text-xs text-slate-400 mt-1">계정: {user.email}</p>
         </div>
         <Link 
-          href="/" 
+          href="/dashboard" 
           className="text-xs text-brand-cyan hover:underline font-bold"
         >
-          메인 페이지로 이동
+          마이페이지 대시보드로 이동
         </Link>
       </div>
     );
@@ -109,6 +146,35 @@ export default function SignInPage() {
           </button>
         </form>
 
+        {/* Test Accounts Quick Login Divider */}
+        <div className="relative flex py-2 items-center">
+          <div className="flex-grow border-t border-white/5"></div>
+          <span className="flex-shrink mx-4 text-[9px] text-slate-500 font-black uppercase tracking-widest">TEST LOGIN</span>
+          <div className="flex-grow border-t border-white/5"></div>
+        </div>
+
+        {/* Quick Test Accounts buttons */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => handleQuickLogin("admin")}
+              type="button"
+              className="py-2.5 px-3 bg-slate-900/60 hover:bg-brand-cyan/20 border border-brand-cyan/35 text-brand-cyan rounded-xl text-xs font-bold transition-all text-center"
+            >
+              어드민 (B2B/주최자)
+              <span className="block text-[9px] text-slate-400 font-medium mt-0.5">admin@edtech.com</span>
+            </button>
+            <button
+              onClick={() => handleQuickLogin("user")}
+              type="button"
+              className="py-2.5 px-3 bg-slate-900/60 hover:bg-brand-cyan/20 border border-white/10 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition-all text-center"
+            >
+              일반 참관객
+              <span className="block text-[9px] text-slate-400 font-medium mt-0.5">user@edtech.com</span>
+            </button>
+          </div>
+        </div>
+
         <div className="relative flex py-2 items-center">
           <div className="flex-grow border-t border-white/5"></div>
           <span className="flex-shrink mx-4 text-[10px] text-slate-500 font-bold uppercase tracking-widest">or</span>
@@ -143,7 +209,7 @@ export default function SignInPage() {
                 fill="#EA4335"
               />
             </svg>
-            <span>Google 계정으로 편리하게 로그인 (리디렉션)</span>
+            <span>Google 계정으로 로그인 (리디렉션)</span>
           </button>
         </div>
 
