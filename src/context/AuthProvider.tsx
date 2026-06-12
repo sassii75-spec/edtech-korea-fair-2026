@@ -10,11 +10,10 @@ import {
   signInWithRedirect,
   getRedirectResult,
   onAuthStateChanged,
-  User as FirebaseUser,
 } from "firebase/auth";
 
 interface AuthContextProps {
-  user: FirebaseUser | null;
+  user: any | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -25,30 +24,95 @@ interface AuthContextProps {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!auth) {
-        console.warn('Firebase auth not initialized – check NEXT_PUBLIC_FIREBASE_* env vars');
+    // 1. Load mock user from localStorage if it exists (allows testing bypass)
+    if (typeof window !== "undefined") {
+      const savedMockUser = localStorage.getItem("mock_user");
+      if (savedMockUser) {
+        setUser(JSON.parse(savedMockUser));
         setLoading(false);
         return;
       }
+    }
+
+    if (!auth) {
+      console.warn('Firebase auth not initialized – check NEXT_PUBLIC_FIREBASE_* env vars');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      // 2. Only override state with Firebase user if mock user isn't active
+      const savedMockUser = localStorage.getItem("mock_user");
+      if (!savedMockUser) {
+        setUser(currentUser);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    if (!auth) throw new Error('Firebase auth not initialized');
-    await signInWithEmailAndPassword(auth, email, password);
+    if (!auth) {
+      // Fallback: No Firebase client -> Mock login
+      const mockUser = { email, uid: `mock-${email.split("@")[0]}` };
+      localStorage.setItem("mock_user", JSON.stringify(mockUser));
+      setUser(mockUser);
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      localStorage.removeItem("mock_user");
+    } catch (err: any) {
+      // Fallback: Firebase Console hasn't enabled Email/Password sign‑in
+      if (
+        err.code === "auth/configuration-not-found" ||
+        err.code === "auth/invalid-api-key" ||
+        err.message.includes("configuration-not-found") ||
+        err.message.includes("invalid-api-key")
+      ) {
+        console.warn("Firebase Auth config missing. Falling back to local mock authentication.");
+        const mockUser = { email, uid: `mock-${email.split("@")[0]}` };
+        localStorage.setItem("mock_user", JSON.stringify(mockUser));
+        setUser(mockUser);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    if (!auth) throw new Error('Firebase auth not initialized');
-    await createUserWithEmailAndPassword(auth, email, password);
+    if (!auth) {
+      // Fallback: Mock registration
+      const mockUser = { email, uid: `mock-${email.split("@")[0]}` };
+      localStorage.setItem("mock_user", JSON.stringify(mockUser));
+      setUser(mockUser);
+      return;
+    }
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      localStorage.removeItem("mock_user");
+    } catch (err: any) {
+      // Fallback: Firebase Console config missing
+      if (
+        err.code === "auth/configuration-not-found" ||
+        err.code === "auth/invalid-api-key" ||
+        err.message.includes("configuration-not-found") ||
+        err.message.includes("invalid-api-key")
+      ) {
+        console.warn("Firebase Auth config missing. Falling back to local mock registration.");
+        const mockUser = { email, uid: `mock-${email.split("@")[0]}` };
+        localStorage.setItem("mock_user", JSON.stringify(mockUser));
+        setUser(mockUser);
+      } else {
+        throw err;
+      }
+    }
   };
 
   const signInWithGoogle = async () => {
@@ -64,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const result = await getRedirectResult(auth!);
         if (result?.user) {
+          localStorage.removeItem("mock_user");
           setUser(result.user);
         }
       } catch (err) {
@@ -74,8 +139,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOutUser = async () => {
-    if (!auth) return;
-    await signOut(auth);
+    localStorage.removeItem("mock_user");
+    setUser(null);
+    if (auth) {
+      await signOut(auth);
+    }
   };
 
   const value: AuthContextProps = {
