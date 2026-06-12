@@ -7,7 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
   User as FirebaseUser,
 } from "firebase/auth";
@@ -29,9 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!auth) {
-      setLoading(false);
-      return;
-    }
+        console.warn('Firebase auth not initialized – check NEXT_PUBLIC_FIREBASE_* env vars');
+        setLoading(false);
+        return;
+      }
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -52,8 +54,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     if (!auth) throw new Error('Firebase auth not initialized');
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await signInWithRedirect(auth, provider);
   };
+
+  // Handle redirect result after returning from Google
+  useEffect(() => {
+    if (!auth) return;
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth!);
+        if (result?.user) {
+          setUser(result.user);
+        }
+      } catch (err) {
+        console.error('Google sign‑in redirect error:', err);
+      }
+    };
+    handleRedirect();
+  }, []);
 
   const signOutUser = async () => {
     if (!auth) return;

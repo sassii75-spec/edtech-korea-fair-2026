@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   description: "Experience-driven fair platform for education technology",
 };
 
+import Header from "./components/Header";
 import AuthProvider from "../context/AuthProvider";
 
 export default function RootLayout({
@@ -29,8 +30,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+      <body className="min-h-full flex flex-col bg-edtech-radial">
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
