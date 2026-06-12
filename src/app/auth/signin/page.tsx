@@ -16,8 +16,12 @@ export default function SignInPage() {
     setError(null);
     try {
       await signIn(email, password);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
     }
   };
 
@@ -25,8 +29,12 @@ export default function SignInPage() {
     setError(null);
     try {
       await signInWithGoogle();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
     }
   };
 
